@@ -73,7 +73,12 @@ class PropagationPathStorage extends ComputeRaysOut {
                 paths.propagationPathList.add(pathPk)
                 receiverPaths.add(paths)
             }
-            return new double[0]
+            double[] aGlobalMeteo = propagationPathStorage.computeAttenuation(propagationPathStorage.genericMeteoData, sourceId, sourceLi, receiverId, propagationPath);
+            if (aGlobalMeteo != null) {
+                return aGlobalMeteo
+            } else {
+                return new double[0]
+            }
         }
 
         @Override
