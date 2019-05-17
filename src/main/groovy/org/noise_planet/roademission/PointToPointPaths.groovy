@@ -5,7 +5,7 @@ import org.noise_planet.noisemodelling.propagation.PropagationPath
 
 @CompileStatic
 class PointToPointPaths {
-    List<PropagationPath> propagationPath;
+    ArrayList<PropagationPath> propagationPathList;
     double li
     long sourceId
     long receiverId
@@ -15,12 +15,12 @@ class PointToPointPaths {
      * @param out the stream to write into
      * @throws java.io.IOException if an I/O-error occurs
      */
-    void writePropagationPathListStream( DataOutputStream out, List<PropagationPath> propagationPaths, double li ) throws IOException {
+    void writePropagationPathListStream( DataOutputStream out) throws IOException {
         out.writeLong(receiverId)
         out.writeLong(sourceId)
         out.writeDouble(li)
-        out.writeInt(propagationPaths.size())
-        for(PropagationPath propagationPath : propagationPaths) {
+        out.writeInt(propagationPathList.size())
+        for(PropagationPath propagationPath : propagationPathList) {
             propagationPath.writeStream(out);
         }
     }
@@ -32,16 +32,16 @@ class PointToPointPaths {
      * @param in the stream to read
      * @throws IOException if an I/O-error occurs
      */
-    void readPropagationPathListStream( DataInputStream inputStream , ArrayList<PropagationPath> propagationPaths) throws IOException {
+    void readPropagationPathListStream( DataInputStream inputStream) throws IOException {
         receiverId = inputStream.readLong()
         sourceId = inputStream.readLong()
         li = inputStream.readDouble()
         int propagationPathsListSize = inputStream.readInt();
-        propagationPaths.ensureCapacity(propagationPathsListSize);
+        propagationPathList.ensureCapacity(propagationPathsListSize);
         for(int i=0; i < propagationPathsListSize; i++) {
             PropagationPath propagationPath = new PropagationPath();
             propagationPath.readStream(inputStream);
-            propagationPaths.add(propagationPath);
+            propagationPathList.add(propagationPath);
         }
     }
 
