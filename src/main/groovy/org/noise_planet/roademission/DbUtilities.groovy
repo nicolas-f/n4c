@@ -53,34 +53,4 @@ class DbUtilities {
         return connection
     }
 
-    @CompileStatic
-    static void createReceiversFromBuildings(Sql sql, String buildingName, String areaTable) {
-        sql.execute("DROP TABLE IF EXISTS GLUED_BUILDINGS")
-        sql.execute("CREATE TABLE GLUED_BUILDINGS AS SELECT ST_UNION(ST_ACCUM(ST_BUFFER(B.THE_GEOM, 2.0,'endcap=square join=bevel'))) the_geom FROM "+buildingName+" B, "+areaTable+" A WHERE A.THE_GEOM && B.THE_GEOM AND ST_INTERSECTS(A.THE_GEOM, B.THE_GEOM)")
-        Logger logger = LoggerFactory.getLogger("test")
-        sql.execute("DROP TABLE IF EXISTS RECEIVERS")
-        sql.execute("CREATE TABLE RECEIVERS(pk serial, the_geom GEOMETRY)")
-        boolean pushed = false
-        sql.withTransaction {
-            sql.withBatch("INSERT INTO receivers(the_geom) VALUES (ST_MAKEPOINT(:px, :py, :pz))") { BatchingPreparedStatementWrapper batch ->
-                sql.eachRow("SELECT THE_GEOM FROM ST_EXPLODE('GLUED_BUILDINGS')") {
-                    row ->
-                        List<Coordinate> receivers = new ArrayList<>();
-                        ComputeRays.splitLineStringIntoPoints((LineString) ST_Force3D.force3D(((Polygon) row["the_geom"]).exteriorRing), 5.0d, receivers)
-                        for (Coordinate p : receivers) {
-                            p.setOrdinate(2, 4.0d)
-                            batch.addBatch([px:p.x, py:p.y, pz:p.z])
-                            pushed = true
-                        }
-
-                }
-                if(pushed) {
-                    batch.executeBatch()
-                    pushed = false
-                }
-            }
-        }
-        SHPWrite.exportTable(sql.getConnection(), "data/receivers.shp", "RECEIVERS")
-        sql.execute("DROP TABLE GLUED_BUILDINGS")
-    }
 }
