@@ -7,8 +7,6 @@ Internet access
 
 How to run
 
-Copy data into data/ folder
-
 Run
 ```shell
 ./gradlew
