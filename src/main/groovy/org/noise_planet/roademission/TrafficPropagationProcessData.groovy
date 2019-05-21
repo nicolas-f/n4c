@@ -33,8 +33,6 @@ class TrafficPropagationProcessData extends PropagationProcessData {
     private static final int LDAY_START_HOUR = 6
     private static final int LDAY_STOP_HOUR = 18
     private static final double HV_PERCENTAGE = 0.1
-    //private Map<Integer, Double> class_to_speed = [1:130, 2:80,3:50,4:50,5:59,6:50,7:50]
-
 
     public TrafficPropagationProcessData(FastObstructionTest freeFieldFinder) {
         super(freeFieldFinder);

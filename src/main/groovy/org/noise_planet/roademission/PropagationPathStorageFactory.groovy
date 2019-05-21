@@ -29,16 +29,8 @@ class PropagationPathStorageFactory implements PointNoiseMap.IComputeRaysOutFact
         this.workingDir = workingDir
     }
 
-    static void exportDomain(PropagationProcessData inputData, String path) {
-        GeoJSONDocument geoJSONDocument = new GeoJSONDocument(new FileOutputStream(path))
-        geoJSONDocument.writeHeader()
-        geoJSONDocument.writeTopographic(inputData.freeFieldFinder.getTriangles(), inputData.freeFieldFinder.getVertices())
-        geoJSONDocument.writeFooter()
-    }
-
     @Override
     IComputeRaysOut create(PropagationProcessData propagationProcessData, PropagationProcessPathData propagationProcessPathData) {
-        exportDomain(propagationProcessData, new File(this.workingDir, String.format("_%d.geojson", propagationProcessData.cellId)).absolutePath)
         return new PropagationPathStorage(propagationProcessData, propagationProcessPathData, pathQueue)
     }
 

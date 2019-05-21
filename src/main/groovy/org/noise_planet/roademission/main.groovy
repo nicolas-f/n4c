@@ -24,6 +24,7 @@ import java.text.SimpleDateFormat
 class Main {
     static void main(String[] args) {
         // Read working directory argument
+        String dataFolder = "datafull/"
         String workingDir = ""
         if (args.length > 0) {
             workingDir = args[0]
@@ -48,51 +49,50 @@ class Main {
         sql.execute("DROP TABLE IF EXISTS BUILDINGS")
 
         logger.info("Read building file")
-        SHPRead.readShape(connection, "data/buildings.shp", "BUILDINGS")
-        SHPRead.readShape(connection, "data/study_area.shp", "STUDY_AREA")
+        SHPRead.readShape(connection, dataFolder+"buildings.shp", "BUILDINGS")
+        SHPRead.readShape(connection, dataFolder+"study_area.shp", "STUDY_AREA")
         sql.execute("CREATE SPATIAL INDEX ON BUILDINGS(THE_GEOM)")
         logger.info("Building file loaded")
 
         // Load or create receivers points
-        if(!new File("data/receivers.shp").exists()) {
+        if(!new File(dataFolder+"receivers.shp").exists()) {
             DbUtilities.createReceiversFromBuildings(sql, "BUILDINGS", "STUDY_AREA")
         } else {
-            SHPRead.readShape(connection, "data/receivers.shp", "RECEIVERS")
+            SHPRead.readShape(connection, dataFolder+"receivers_sel.shp", "RECEIVERS")
         }
         sql.execute("CREATE SPATIAL INDEX ON RECEIVERS(THE_GEOM)")
 
         // Load roads
         logger.info("Read road geometries and traffic")
-        SHPRead.readShape(connection, "data/troncon2012.shp", "ROADS")
+        SHPRead.readShape(connection, dataFolder+"troncon2012.shp", "ROADS")
         sql.execute("CREATE SPATIAL INDEX ON ROADS(THE_GEOM)")
         logger.info("Road file loaded")
 
         // Load ground type
         logger.info("Read ground surface categories")
-        SHPRead.readShape(connection, "data/ground_type.shp", "GROUND_TYPE")
+        SHPRead.readShape(connection, dataFolder+"ground_type.shp", "GROUND_TYPE")
         sql.execute("CREATE SPATIAL INDEX ON GROUND_TYPE(THE_GEOM)")
         logger.info("Surface categories file loaded")
 
         // Init NoiseModelling
         PointNoiseMap pointNoiseMap = new PointNoiseMap("BUILDINGS", "ROADS", "RECEIVERS")
-        pointNoiseMap.setSoilTableName("GROUND_TYPE")
-        pointNoiseMap.setMaximumPropagationDistance(1200.0d)
-        pointNoiseMap.soundReflectionOrder = 2
+        //pointNoiseMap.setSoilTableName("GROUND_TYPE")
+        pointNoiseMap.setMaximumPropagationDistance(750.0d)
+        pointNoiseMap.soundReflectionOrder = 1
         pointNoiseMap.computeHorizontalDiffraction = true
         pointNoiseMap.computeVerticalDiffraction = true
         pointNoiseMap.setHeightField("HAUTEUR")
-        pointNoiseMap.setThreadCount(4) // Use 4 cpu threads
+        pointNoiseMap.setThreadCount(3) // Use 4 cpu threads
         pointNoiseMap.setMaximumError(0.1d)
         PropagationPathStorageFactory storageFactory = new PropagationPathStorageFactory()
         TrafficPropagationProcessDataFactory trafficPropagationProcessDataFactory = new TrafficPropagationProcessDataFactory()
         pointNoiseMap.setPropagationProcessDataFactory(trafficPropagationProcessDataFactory)
         pointNoiseMap.setComputeRaysOutFactory(storageFactory)
-        storageFactory.setWorkingDir(workingDir)
+        storageFactory.setWorkingDir(new File(workingDir).getAbsolutePath())
         try {
             storageFactory.openPathOutputFile(new File(workingDir, "rays.gz").absolutePath)
-            RootProgressVisitor progressLogger = new RootProgressVisitor(2, true, 1)
-            pointNoiseMap.initialize(connection, progressLogger)
-            progressLogger.endStep()
+            RootProgressVisitor progressLogger = new RootProgressVisitor(1, true, 1)
+            pointNoiseMap.initialize(connection, new EmptyProgressVisitor())
             // Set of already processed receivers
             Set<Long> receivers = new HashSet<>()
             ProgressVisitor progressVisitor = progressLogger.subProcess(pointNoiseMap.getGridDim()*pointNoiseMap.getGridDim())
