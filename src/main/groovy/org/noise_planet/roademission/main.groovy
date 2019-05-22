@@ -26,7 +26,7 @@ class Main {
     static void main(String[] args) {
         // Read working directory argument
         String dataFolder = "data/"
-        String workingDir = ""
+        String workingDir = "out/"
         if (args.length > 0) {
             workingDir = args[0]
         }
@@ -72,6 +72,7 @@ class Main {
         pointNoiseMap.computeHorizontalDiffraction = true
         pointNoiseMap.computeVerticalDiffraction = true
         pointNoiseMap.setHeightField("HEIGHT")
+        pointNoiseMap.verbose = false
         pointNoiseMap.setThreadCount(1) // Single thread
         RootProgressVisitor progressLogger = new RootProgressVisitor(1, false, 1)
         pointNoiseMap.initialize(connection, new EmptyProgressVisitor())
@@ -84,13 +85,13 @@ class Main {
         // Processing are subdivided in sub domains
         // Process all sub domains
 
-        logger.info("Receiver\tSource\tLAeq")
+        logger.info("Receiver,Source,Attenuation(dBA)")
         for (int i = 0; i < pointNoiseMap.getGridDim(); i++) {
             for (int j = 0; j < pointNoiseMap.getGridDim(); j++) {
                 ComputeRaysOut out = (ComputeRaysOut) pointNoiseMap.evaluateCell(connection, i, j, progressVisitor, receivers)
                 out.getVerticesSoundLevel().each { receiver ->
                     double globalLevel = ComputeRays.wToDba(ComputeRays.sumArray(ComputeRays.dbaToW(receiver.value)))
-                    logger.info(String.format(Locale.ROOT, "%d\t%d\t%.2f dB", receiver.receiverId, receiver.sourceId, globalLevel))
+                    logger.info(String.format(Locale.ROOT, "%d,%d,%.2f", receiver.receiverId, receiver.sourceId, globalLevel))
                 }
             }
         }
